@@ -40,16 +40,37 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 CACHE_FNAME = "SI206_project3_cache.json"
 # Put the rest of your caching setup here:
 
+try:
+	cache_file = open(CACHE_FNAME,'r')
+	cache_contents = cache_file.read()
+	cache_file.close()
+	CACHE_DICTION = json.loads(cache_contents)
+except:
+	CACHE_DICTION = {}
 
 # Define your function get_user_tweets here:
 
+def get_user_tweets(handle):
+	found_tweets = []
 
+	if handle in CACHE_DICTION:
+		results = CACHE_DICTION[handle]
+	else:
+		results = api.user_timeline(handle)
+		CACHE_DICTION[handle] = results
 
+	tweet_cache = open(CACHE_FNAME, "w")
+	tweet_cache.write(json.dumps(CACHE_DICTION))
+	tweet_cache.close()
+
+	for tweet in results:
+		found_tweets.append(tweet)
+
+	return found_tweets
 
 # Write an invocation to the function for the "umich" user timeline and save the result in a variable called umich_tweets:
 
-
-
+umich_tweets = get_user_tweets("umich")
 
 ## Task 2 - Creating database and loading data into database
 
