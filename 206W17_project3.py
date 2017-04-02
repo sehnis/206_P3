@@ -134,21 +134,32 @@ db_connection.commit()
 
 # Make a query to select all of the records in the Users database. Save the list of tuples in a variable called users_info.
 
+db_cursor.execute("SELECT * FROM Users")
+users_info = db_cursor.fetchall()
+
 # Make a query to select all of the user screen names from the database. Save a resulting list of strings (NOT tuples, the strings inside them!) in the variable screen_names. HINT: a list comprehension will make this easier to complete!
 
+db_cursor.execute("SELECT screen_name FROM Users")
+names_temp = db_cursor.fetchall()
+
+screen_names = [str(name) for name in names_temp]
 
 # Make a query to select all of the tweets (full rows of tweet information) that have been retweeted more than 25 times. Save the result (a list of tuples, or an empty list) in a variable called more_than_25_rts.
 
-
+db_cursor.execute("SELECT * FROM Tweets WHERE retweets > 25")
+more_than_25_rts = db_cursor.fetchall()
 
 # Make a query to select all the descriptions (descriptions only) of the users who have favorited more than 25 tweets. Access all those strings, and save them in a variable called descriptions_fav_users, which should ultimately be a list of strings.
 
+db_cursor.execute("SELECT description FROM Users WHERE num_favs > 25")
+fav_temp = db_cursor.fetchall()
 
+descriptions_fav_users = [str(fav) for fav in fav_temp]
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 elements in each tuple: the user screenname and the text of the tweet -- for each tweet that has been retweeted more than 50 times. Save the resulting list of tuples in a variable called joined_result.
 
-
-
+db_cursor.execute("SELECT Users.screen_name, Tweets.tweet_text from Tweets INNER JOIN Users on Tweets.user_id = Users.user_id WHERE Tweets.retweets > 50")
+joined_result = db_cursor.fetchall()
 
 ## Task 4 - Manipulating data with comprehensions & libraries
 
