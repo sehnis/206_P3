@@ -81,7 +81,7 @@ umich_tweets = get_user_tweets("umich")
 # table Tweets, with columns:
 # - tweet_id (containing the string id belonging to the Tweet itself, from the data you got from Twitter) -- this column should be the PRIMARY KEY of this table
 # - text (containing the text of the Tweet)
-# - user_posted (an ID string, referencing the Users table, see below)
+# - user_id (an ID string, referencing the Users table, see below)
 # - time_posted (the time at which the tweet was created)
 # - retweets (containing the integer representing the number of times the tweet has been retweeted)
 
@@ -103,15 +103,30 @@ umich_tweets = get_user_tweets("umich")
 ## HINT #2: You may want to go back to a structure we used in class this week to ensure that you reference the user correctly in each Tweet record.
 ## HINT #3: The users mentioned in each tweet are included in the tweet dictionary -- you don't need to do any manipulation of the Tweet text to find out which they are! Do some nested data investigation on a dictionary that represents 1 tweet to see it!
 
+db_connection = sqlite3.connect("project3_tweets.db")
+db_cursor = db_connection.cursor()
 
+db_cursor.execute("DROP TABLE IF EXISTS Tweets")
+db_cursor.execute("CREATE TABLE Tweets (tweet_id TEXT PRIMARY KEY, tweet_text TEXT, user_id TEXT NOT NULL, time_posted TIMESTAMP, retweets INT)")
 
+db_cursor.execute("DROP TABLE IF EXISTS Users")
+db_cursor.execute("CREATE TABLE Users (user_id TEXT PRIMARY KEY, screen_name TEXT, num_favs INT, description TEXT)")
 
+insert_tweet = "INSERT INTO Tweets VALUES (?, ?, ?, ?, ?)"
+insert_user = "INSERT OR IGNORE INTO Users VALUES (?, ?, ?, ?)"
 
+for tweet in umich_tweets:
+	full_tweet = (tweet["id"], tweet["text"], tweet["user"]["id"], tweet["created_at"], tweet["retweet_count"])
+	db_cursor.execute(insert_tweet, full_tweet)
+	full_user = (tweet["user"]["id"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"])
+	db_cursor.execute(insert_user, full_user)
+	# if (len(tweet["entities"]["user_mentions"]) > 0):
+	for mention in tweet["entities"]["user_mentions"]:
+		mentioned_by = api.get_user(mention["screen_name"])
+		full_mention = (mentioned_by["id"], mentioned_by["screen_name"], mentioned_by["favourites_count"], mentioned_by["description"])
+		db_cursor.execute(insert_user, full_mention)
 
-
-
-
-
+db_connection.commit()
 
 ## Task 3 - Making queries, saving data, fetching data
 
