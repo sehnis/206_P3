@@ -12,9 +12,10 @@ import collections
 import tweepy
 import twitter_info # same deal as always...
 import json
+import re
 import sqlite3
 
-## Your name:
+## Your name: Sam Ehnis-Clark (sehnis)
 ## The names of anyone you worked with on this project:
 
 #####
@@ -52,7 +53,6 @@ except:
 
 def get_user_tweets(handle):
 	found_tweets = []
-
 	if handle in CACHE_DICTION:
 		results = CACHE_DICTION[handle]
 	else:
@@ -120,7 +120,6 @@ for tweet in umich_tweets:
 	db_cursor.execute(insert_tweet, full_tweet)
 	full_user = (tweet["user"]["id"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"])
 	db_cursor.execute(insert_user, full_user)
-	# if (len(tweet["entities"]["user_mentions"]) > 0):
 	for mention in tweet["entities"]["user_mentions"]:
 		mentioned_by = api.get_user(mention["screen_name"])
 		full_mention = (mentioned_by["id"], mentioned_by["screen_name"], mentioned_by["favourites_count"], mentioned_by["description"])
@@ -158,27 +157,49 @@ descriptions_fav_users = [str(fav) for fav in fav_temp]
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 elements in each tuple: the user screenname and the text of the tweet -- for each tweet that has been retweeted more than 50 times. Save the resulting list of tuples in a variable called joined_result.
 
-db_cursor.execute("SELECT Users.screen_name, Tweets.tweet_text from Tweets INNER JOIN Users on Tweets.user_id = Users.user_id WHERE Tweets.retweets > 50")
+db_cursor.execute("SELECT Users.screen_name, Tweets.tweet_text from Tweets INNER JOIN Users on Tweets.user_id = Users.user_id WHERE Tweets.retweets > 5")
 joined_result = db_cursor.fetchall()
 
 ## Task 4 - Manipulating data with comprehensions & libraries
 
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
 
-
+temp_words = [dfu.split(" ") for dfu in descriptions_fav_users]
+description_words = {char for word in temp_words for char in word}
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
 
+all_chars = []
+for dfu in descriptions_fav_users:
+	found_chars = re.findall(r'[A-z0-9]', dfu)
+	for char in found_chars:
+		all_chars.append(char)
 
+sorted_chars = collections.Counter(all_chars).most_common(1)
+most_common_char = sorted_chars[0][0]
 
 ## Putting it all together...
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
 
+twitter_info_diction = {}
+commands = []
 
+for name in screen_names:
+	command = "SELECT tweet_text FROM Tweets INNER JOIN Users WHERE screen_name = \"" + name + "\""
+	commands.append(command)
+
+for command in commands:
+	db_cursor.execute(command)
+	found_text = db_cursor.fetchall()
+	separated_text = [found[0] for found in found_text]
+	found_name = screen_names[commands.index(command)]
+	diction_dict = {found_name : separated_text}
+	twitter_info_diction.update(diction_dict)
 
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
 
+db_connection.close()
 
 ###### TESTS APPEAR BELOW THIS LINE ######
 ###### Note that the tests are necessary to pass, but not sufficient -- must make sure you've followed the instructions accurately! ######
